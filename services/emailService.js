@@ -1,17 +1,20 @@
 const nodemailer = require('nodemailer');
 
+// Konfigurasi dengan opsi yang lebih aman
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,                    // Ganti dari 465 ke 587
+    secure: false,                // false untuk port 587
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     }
 });
 
+// Kirim email konfirmasi
 async function sendConfirmationEmail(userEmail, reminderTitle, dueDate) {
     try {
-        const reminderDate = new Date(dueDate);
-        const reminderDateFormatted = reminderDate.toLocaleDateString('id-ID', {
+        const reminderDateFormatted = new Date(dueDate).toLocaleDateString('id-ID', {
             weekday: 'long',
             year: 'numeric',
             month: 'long',
