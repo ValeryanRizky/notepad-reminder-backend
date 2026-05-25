@@ -1,17 +1,6 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Konfigurasi dengan opsi yang lebih aman
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,                    // Ganti dari 465 ke 587
-    secure: false,                // false untuk port 587
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
-
-// Kirim email konfirmasi
 async function sendConfirmationEmail(userEmail, reminderTitle, dueDate) {
     try {
         const reminderDateFormatted = new Date(dueDate).toLocaleDateString('id-ID', {
@@ -21,8 +10,8 @@ async function sendConfirmationEmail(userEmail, reminderTitle, dueDate) {
             day: 'numeric'
         });
 
-        const info = await transporter.sendMail({
-            from: `"Notepad Reminder" <${process.env.EMAIL_USER}>`,
+        const { data, error } = await resend.emails.send({
+            from: 'onboarding@resend.dev',  // Domain default Resend
             to: userEmail,
             subject: `✅ Reminder Created: ${reminderTitle}`,
             html: `
@@ -40,7 +29,7 @@ async function sendConfirmationEmail(userEmail, reminderTitle, dueDate) {
                     </div>
                     
                     <div style="text-align: center; margin-top: 20px;">
-                        <a href="${process.env.FRONTEND_URL || 'https://notepad-reminder-frontend.vercel.app'}/dashboard" 
+                        <a href="${process.env.FRONTEND_URL}/dashboard" 
                            style="background-color: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px;">
                             Lihat di Dashboard
                         </a>
@@ -49,14 +38,15 @@ async function sendConfirmationEmail(userEmail, reminderTitle, dueDate) {
                     <hr style="margin: 20px 0; border-color: #e5e7eb;">
                     
                     <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-                        Ini adalah pesan otomatis dari Notepad Reminder. Mohon tidak membalas email ini.
+                        Ini adalah pesan otomatis dari Notepad Reminder.
                     </p>
                 </div>
             `
         });
 
+        if (error) throw error;
         console.log(`✅ Email konfirmasi terkirim ke ${userEmail}`);
-        return { success: true, messageId: info.messageId };
+        return { success: true };
 
     } catch (error) {
         console.error('❌ Gagal kirim email:', error);
@@ -64,7 +54,6 @@ async function sendConfirmationEmail(userEmail, reminderTitle, dueDate) {
     }
 }
 
-// Kirim email pengingat H-1
 async function sendReminderEmail(userEmail, reminderTitle, dueDate) {
     try {
         const dueDateFormatted = new Date(dueDate).toLocaleDateString('id-ID', {
@@ -74,8 +63,8 @@ async function sendReminderEmail(userEmail, reminderTitle, dueDate) {
             day: 'numeric'
         });
 
-        const info = await transporter.sendMail({
-            from: `"Notepad Reminder" <${process.env.EMAIL_USER}>`,
+        const { data, error } = await resend.emails.send({
+            from: 'onboarding@resend.dev',
             to: userEmail,
             subject: `🔔 Reminder: ${reminderTitle} akan segera jatuh tempo!`,
             html: `
@@ -93,7 +82,7 @@ async function sendReminderEmail(userEmail, reminderTitle, dueDate) {
                     </div>
                     
                     <div style="text-align: center; margin-top: 20px;">
-                        <a href="${process.env.FRONTEND_URL || 'https://notepad-reminder-frontend.vercel.app'}/dashboard" 
+                        <a href="${process.env.FRONTEND_URL}/dashboard" 
                            style="background-color: #f97316; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px;">
                             Lihat di Dashboard
                         </a>
@@ -102,14 +91,15 @@ async function sendReminderEmail(userEmail, reminderTitle, dueDate) {
                     <hr style="margin: 20px 0; border-color: #e5e7eb;">
                     
                     <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-                        Ini adalah pesan otomatis dari Notepad Reminder. Mohon tidak membalas email ini.
+                        Ini adalah pesan otomatis dari Notepad Reminder.
                     </p>
                 </div>
             `
         });
 
+        if (error) throw error;
         console.log(`✅ Email pengingat terkirim ke ${userEmail}`);
-        return { success: true, messageId: info.messageId };
+        return { success: true };
 
     } catch (error) {
         console.error('❌ Gagal kirim email pengingat:', error);
