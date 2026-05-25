@@ -1,4 +1,5 @@
 const supabase = require('../db/supabase');
+const { sendConfirmationEmail } = require('../services/emailService');
 
 // CREATE reminder
 exports.createReminder = async (req, res) => {
@@ -6,9 +7,8 @@ exports.createReminder = async (req, res) => {
         const { title, description, due_date, is_urgent } = req.body;
         const user_id = req.user.id;
 
-        if (!title || !due_date) {
-            return res.status(400).json({ error: 'title dan due_date wajib diisi' });
-        }
+        const { data: userData, error: userError } = await supabase.auth.getUser(req.headers.authorization.split(' ')[1]);
+        const userEmail = userData.user.email;
 
         const reminderDate = new Date(due_date);
         reminderDate.setDate(reminderDate.getDate() - 1);
@@ -22,16 +22,19 @@ exports.createReminder = async (req, res) => {
                 due_date,
                 reminder_date: reminderDate.toISOString(),
                 is_notified: false,
-                is_urgent: is_urgent || false  // tambah field urgent
+                is_urgent: is_urgent || false
             }])
             .select();
 
         if (error) throw error;
 
+        await sendConfirmationEmail(userEmail, title, due_date);
+
         res.status(201).json({
-            message: 'Reminder berhasil dibuat ✅',
+            message: 'Reminder berhasil dibuat & email konfirmasi terkirim ✅',
             reminder: data[0],
         });
+
     } catch (err) {
         console.error('Error create reminder:', err);
         res.status(500).json({ error: err.message });
