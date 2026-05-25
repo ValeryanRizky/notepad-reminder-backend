@@ -1,5 +1,15 @@
-const { Resend } = require('resend');
-const resend = new Resend(process.env.RESEND_API_KEY);
+const nodemailer = require('nodemailer');
+
+// Konfigurasi Brevo SMTP
+const transporter = nodemailer.createTransport({
+    host: 'smtp-relay.brevo.com',
+    port: 587,
+    secure: false,
+    auth: {
+        user: process.env.BREVO_USER,  // email Anda
+        pass: process.env.BREVO_KEY    // SMTP key dari Brevo
+    }
+});
 
 async function sendConfirmationEmail(userEmail, reminderTitle, dueDate) {
     try {
@@ -10,8 +20,8 @@ async function sendConfirmationEmail(userEmail, reminderTitle, dueDate) {
             day: 'numeric'
         });
 
-        const { data, error } = await resend.emails.send({
-            from: 'onboarding@resend.dev',  // Domain default Resend
+        const info = await transporter.sendMail({
+            from: `"Notepad Reminder" <${process.env.EMAIL_USER}>`,
             to: userEmail,
             subject: `✅ Reminder Created: ${reminderTitle}`,
             html: `
@@ -44,9 +54,8 @@ async function sendConfirmationEmail(userEmail, reminderTitle, dueDate) {
             `
         });
 
-        if (error) throw error;
         console.log(`✅ Email konfirmasi terkirim ke ${userEmail}`);
-        return { success: true };
+        return { success: true, messageId: info.messageId };
 
     } catch (error) {
         console.error('❌ Gagal kirim email:', error);
@@ -63,8 +72,8 @@ async function sendReminderEmail(userEmail, reminderTitle, dueDate) {
             day: 'numeric'
         });
 
-        const { data, error } = await resend.emails.send({
-            from: 'onboarding@resend.dev',
+        const info = await transporter.sendMail({
+            from: `"Notepad Reminder" <${process.env.EMAIL_USER}>`,
             to: userEmail,
             subject: `🔔 Reminder: ${reminderTitle} akan segera jatuh tempo!`,
             html: `
@@ -97,9 +106,8 @@ async function sendReminderEmail(userEmail, reminderTitle, dueDate) {
             `
         });
 
-        if (error) throw error;
         console.log(`✅ Email pengingat terkirim ke ${userEmail}`);
-        return { success: true };
+        return { success: true, messageId: info.messageId };
 
     } catch (error) {
         console.error('❌ Gagal kirim email pengingat:', error);
